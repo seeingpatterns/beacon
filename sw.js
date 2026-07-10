@@ -1,6 +1,6 @@
 // 오프라인의 심장: 설치 때 모든 자산을 통째로 캐시하고, 이후 요청은 캐시 우선.
 // 파일이 바뀌면 CACHE 버전을 올려야 갱신된다 (v1 → v2).
-const CACHE = 'nc-v7'; // v7: 경로 이탈 GPS도 SOS용 실좌표 기록 (실기기 테스트에서 발견)
+const CACHE = 'nc-v8'; // v8: km 입력 = "목표 아니라 현위치 눈금" 설명 교정
 const ASSETS = ['./', './index.html', './app.js', './lib/geo.js', './lib/sun.js',
   './lib/plan.js', './lib/beacon.js', './route-data.json', './manifest.webmanifest', './icon-180.png'];
 

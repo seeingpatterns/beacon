@@ -218,8 +218,14 @@
       목록에서 <b class="ok">✅</b> = 해 지기 전에 도착 가능 / <b class="no">❌</b> = 오늘은 무리, 욕심내지 말기<br>
       이름 옆 <b class="warn-badge">⚠️</b> = 확실하지 않은 정보라는 뜻. <b>물은 항상 넉넉하게!</b></p>
 
-      <h3>GPS가 안 잡히면</h3>
-      <p>도로 표지판이나 지도에서 본 <b>km 숫자를 직접 입력</b>하면 똑같이 계산돼요.</p>
+      <h3>GPS가 안 잡히면 — km 직접 입력</h3>
+      <p>이 숫자는 <b>목표가 아니라 "내가 지금 어디 있나"</b>예요.
+      멜버른에서 퍼스까지 3,721km 줄자가 깔려 있다고 상상하세요 (멜버른 = 0).
+      <b>내가 서 있는 눈금</b>을 넣는 거예요.</p>
+      <div class="steps">
+        실전 요령: 어제 GPS가 <b>1,240</b>이라고 알려줬다 →
+        오늘 GPS가 안 잡힌다 → 오늘 100km 달렸으면 <b>1240 + 100 = 1340</b> 입력. 끝.
+      </div>
 
       <h3>🆘 위험할 때 (순서 꼭 기억!)</h3>
       <div class="steps">
@@ -258,7 +264,7 @@
   <div class="card">
     <button id="btn-gps">📍 GPS로 내 위치 잡기</button>
     <div class="grid2">
-      <div><label>또는 현재 km 직접 입력</label><input id="manual-km" type="number" inputmode="decimal" placeholder="예: 1240"></div>
+      <div><label>GPS 안 되면: 멜버른 기준 몇 km 지점?</label><input id="manual-km" type="number" inputmode="decimal" placeholder="어제 지점+오늘 달린 km"></div>
       <div><label>평균 속도 km/h</label><input id="speed" type="number" inputmode="decimal" value="18"></div>
     </div>
     <p class="sub" id="pos-status" style="margin-top:8px; padding:0">위치를 잡으면 아래 판단이 계산됩니다.</p>
