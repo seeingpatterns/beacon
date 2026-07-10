@@ -67,17 +67,20 @@ $('btn-gps').onclick = () => {
   navigator.geolocation.getCurrentPosition(pos => {
     const { latitude: lat, longitude: lon } = pos.coords;
     const hit = projectToRoute(state.data.route, lat, lon);
-    if (hit.offKm > 20) { // 틀린 안내 금지: 경로 밖에선 계산하지 않는다
+    if (hit.offKm > 20) { // 틀린 안내 금지: 경로 밖에선 보급 계산을 하지 않는다
       $('off-route').classList.remove('hidden');
       $('pos-status').textContent = `경로에서 ${hit.offKm.toFixed(0)}km 벗어남`;
-      log(`경로 이탈 감지: ${hit.offKm.toFixed(0)}km — 계산 중단`, 'warn');
+      log(`경로 이탈 감지: ${hit.offKm.toFixed(0)}km — 보급 계산 중단`, 'warn');
+      // 단, 마지막 신호는 진짜 좌표를 기록한다 — 구조에 필요한 건 경로가 아니라 진실
+      recordCrumb({ km: null, lat, lon, src: 'gps-offroute' });
+      log('경로 밖이지만 SOS용 실제 좌표는 저장됨');
       return;
     }
     $('off-route').classList.add('hidden');
     state.km = hit.km; state.lat = lat; state.lon = lon;
     $('pos-status').textContent = `📍 경로상 ${hit.km.toFixed(0)}km 지점 (경로에서 ${hit.offKm.toFixed(1)}km)`;
     log(`GPS 고정: 경로 ${hit.km.toFixed(0)}km 지점`);
-    saveCrumb('gps');
+    recordCrumb({ km: hit.km, lat, lon, src: 'gps' });
     render();
   }, err => {
     $('pos-status').textContent = 'GPS 실패 — 아래에 km를 직접 입력하세요. (' + err.message + ')';
@@ -95,7 +98,7 @@ $('manual-km').oninput = e => {
   const p = state.data.route.reduce((a, b) => Math.abs(b.km - v) < Math.abs(a.km - v) ? b : a);
   state.lat = p.lat; state.lon = p.lon;
   $('pos-status').textContent = `⌨️ 수동 입력: ${v}km 지점`;
-  saveCrumb('manual');
+  recordCrumb({ km: v, lat: p.lat, lon: p.lon, src: 'manual' });
   render();
 };
 
@@ -136,9 +139,9 @@ function render() {
 // 전송은 못 한다(오프라인). 문자 초안만 만들고, 발사는 신호 잡힐 때 메시지 앱이 한다.
 const loadCrumbs = () => JSON.parse(localStorage.getItem('nc.crumbs') || '[]');
 
-function saveCrumb(src) {
-  if (state.km == null || state.lat == null) return;
-  const crumb = { t: new Date().toISOString(), km: state.km, lat: state.lat, lon: state.lon, src };
+function recordCrumb({ km, lat, lon, src }) {
+  if (lat == null || lon == null) return;
+  const crumb = { t: new Date().toISOString(), km, lat, lon, src };
   localStorage.setItem('nc.crumbs', JSON.stringify(pushCrumb(loadCrumbs(), crumb)));
   renderLastCrumb();
 }
@@ -147,13 +150,14 @@ function renderLastCrumb() {
   const last = loadCrumbs().at(-1);
   if (!last) return;
   const when = new Date(last.t).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-  $('last-crumb').textContent =
-    `마지막 기록: ${when} · ${Math.round(last.km)}km 지점 (${loadCrumbs().length}개 저장됨)`;
+  const where = last.km != null ? `${Math.round(last.km)}km 지점` : '경로 밖 — GPS 좌표 저장됨';
+  $('last-crumb').textContent = `마지막 기록: ${when} · ${where} (${loadCrumbs().length}개 저장됨)`;
 }
 
 function currentSosText() {
+  // 우선순위: 가장 최근 기록(crumb) — 경로 이탈 GPS의 "진짜 좌표"가 수동입력 추정치보다 늦게 왔다면 그게 진실이다
   const last = loadCrumbs().at(-1);
-  const p = state.lat != null ? { km: state.km, lat: state.lat, lon: state.lon, t: new Date().toISOString() } : last;
+  const p = last || (state.lat != null ? { km: state.km, lat: state.lat, lon: state.lon, t: new Date().toISOString() } : null);
   return p ? sosText(p) : null;
 }
 
