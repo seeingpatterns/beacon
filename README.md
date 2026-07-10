@@ -29,3 +29,20 @@ node --test tests/*.test.js   # 테스트 (의존성 없음, node 내장 러너)
 
 경로 데이터(`route-data.json`)는 멜버른→퍼스 Eyre Hwy 기준. POI `verified: true`는
 자전거 여행자 실측 출처와 대조 검증된 항목.
+
+## ⚠️ 면책 (Disclaimer)
+
+이 앱은 **참고용 보조 도구**이며, 데이터(보급 지점·거리·일몰 시각)의 정확성을 보증하지 않는다.
+오지 여행의 안전은 사용자 본인의 판단과 준비에 달려 있다.
+**응급 상황에서는 000(호주 긴급신고)과 iPhone 위성 SOS가 우선이다.**
+이 소프트웨어는 MIT 라이선스에 따라 "있는 그대로(AS IS)" 제공되며,
+제작자는 사용 결과에 대해 어떠한 책임도 지지 않는다 — [LICENSE](LICENSE) 참조.
+
+## 크레딧
+
+- 헤더의 CSS 자전거는 공개 CodePen의 SCSS 구조를 CSS 변수로 이식·재구성한 것.
+- POI 검증 출처: nullarborcycling.org 등 자전거 여행자 실측 자료.
+
+## License
+
+[MIT](LICENSE)
