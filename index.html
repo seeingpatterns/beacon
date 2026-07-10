@@ -205,11 +205,11 @@
       </div>
       <p>이걸 안 하면? 인터넷 없는 사막 한가운데서 앱이 <b>안 열려요.</b> 꼭 해주세요.</p>
 
-      <h3>매일 아침, 출발 전에</h3>
+      <h3>매일 아침 (그리고 피곤할 때)</h3>
       <div class="steps">
-        1. 아이콘 눌러서 앱 열기<br>
-        2. <b>[📍 GPS로 내 위치 잡기]</b> 누르기 (하늘 보이는 곳에서)<br>
-        3. 나오는 숫자 읽기 — 끝!
+        <b>앱을 열면 끝.</b> GPS가 자동으로 잡히고, 맨 위에 답이 떠요.<br>
+        GPS가 잡히는 동안엔 <b>마지막 기록 기준</b> 답이 먼저 떠 있어요 (🕐 표시).<br>
+        갱신이 안 되면 <b>[📍 GPS 다시 잡기]</b> 한 번 (하늘 보이는 곳에서).
       </div>
 
       <h3>숫자 읽는 법</h3>
@@ -263,22 +263,11 @@
     </div>
   </details>
 
-  <div class="card">
-    <button id="btn-gps">📍 GPS로 내 위치 잡기</button>
-    <div class="grid2">
-      <div><label>🪧 GPS 안 되면: 표지판의 도시</label><select id="sign-poi"><option value="" disabled selected>도시 선택…</option></select></div>
-      <div><label>표지판의 남은 km</label><input id="sign-km" type="number" inputmode="decimal" placeholder="예: 300"></div>
-    </div>
-    <div class="grid2">
-      <div><label>고급: 멜버른 기준 km 직접</label><input id="manual-km" type="number" inputmode="decimal" placeholder="어제 지점+오늘 km"></div>
-      <div><label>평균 속도 km/h</label><input id="speed" type="number" inputmode="decimal" value="18"></div>
-    </div>
-    <p class="sub" id="pos-status" style="margin-top:8px; padding:0">위치를 잡으면 아래 판단이 계산됩니다.</p>
-  </div>
+  <p class="sub" id="pos-status" style="padding:4px 2px 10px">📡 위치 확인 중…</p>
 
   <div class="card hidden" id="off-route">
     ⚠️ <b>경로에서 20km 이상 벗어나 있어요.</b> 거리 계산은 경로 위에서만 정확합니다.
-    위의 km 직접 입력을 쓰세요.
+    아래 표지판 모드나 km 입력을 쓰세요.
   </div>
 
   <div class="card hidden" id="verdict">
@@ -292,6 +281,18 @@
   <div class="card hidden" id="stops-card">
     <label>앞으로 400km (✅ = 오늘 일몰 전 도달 가능 / ❌ = 무리)</label>
     <div id="stops"></div>
+  </div>
+
+  <div class="card">
+    <button id="btn-gps">📍 GPS 다시 잡기</button>
+    <div class="grid2">
+      <div><label>🪧 GPS 안 되면: 표지판의 도시</label><select id="sign-poi"><option value="" disabled selected>도시 선택…</option></select></div>
+      <div><label>표지판의 남은 km</label><input id="sign-km" type="number" inputmode="decimal" placeholder="예: 300"></div>
+    </div>
+    <div class="grid2">
+      <div><label>고급: 멜버른 기준 km 직접</label><input id="manual-km" type="number" inputmode="decimal" placeholder="어제 지점+오늘 km"></div>
+      <div><label>평균 속도 km/h</label><input id="speed" type="number" inputmode="decimal" value="18"></div>
+    </div>
   </div>
 
   <div class="card sos">

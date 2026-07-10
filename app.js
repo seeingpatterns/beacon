@@ -62,7 +62,8 @@ log('시스템 시작 — 오프라인 모드 준비 완료');
 log(`경로 데이터 로드: ${state.data.totalKm.toFixed(0)}km · POI ${state.data.pois.length}개`);
 
 // ---- 위치 ----
-$('btn-gps').onclick = () => {
+// 피곤한 사용자 원칙: 앱을 여는 것이 질문이다. 버튼은 재시도용일 뿐, GPS는 열자마자 자동 시작.
+function locateGPS() {
   $('pos-status').textContent = 'GPS 잡는 중… (하늘이 보이는 곳에서)';
   navigator.geolocation.getCurrentPosition(pos => {
     const { latitude: lat, longitude: lon } = pos.coords;
@@ -83,11 +84,14 @@ $('btn-gps').onclick = () => {
     recordCrumb({ km: hit.km, lat, lon, src: 'gps' });
     render();
   }, err => {
-    $('pos-status').textContent = 'GPS 실패 — 아래에 km를 직접 입력하세요. (' + err.message + ')';
+    // 자동 시도가 실패해도 마지막 기록 기준 답은 이미 화면에 있다 — 조용히 알리고 유지
+    const stale = state.km != null ? ' (아래 답은 마지막 기록 기준)' : ' — 아래에 표지판/km를 입력하세요';
+    $('pos-status').textContent = 'GPS 실패' + stale + ' · ' + err.message;
     log('GPS 실패: ' + err.message, 'err');
   },
   { enableHighAccuracy: true, timeout: 15000 });
-};
+}
+$('btn-gps').onclick = locateGPS;
 
 // km 확정 공통 경로 — 위경도는 경로점에서 역산 (일몰 계산용)
 function applyKm(v, statusText, src) {
@@ -209,8 +213,28 @@ renderLastCrumb();
 
 // ---- 초기 상태 복원 + 홈화면 안내 ----
 if (window.navigator.standalone) $('install-tip').classList.add('hidden');
-const savedKm = localStorage.getItem('nc.manualKm');
-if (savedKm) { $('manual-km').value = savedKm; $('manual-km').dispatchEvent(new Event('input')); }
+
+// 열자마자 대답한다: GPS를 기다리지 않고 마지막 기록 기준으로 먼저 판단을 띄운다.
+// (새 crumb은 기록하지 않는다 — 복원은 이동이 아니다)
+(function restoreLast() {
+  const last = loadCrumbs().findLast?.(c => c.km != null) ??
+               [...loadCrumbs()].reverse().find(c => c.km != null);
+  const savedKm = parseFloat(localStorage.getItem('nc.manualKm'));
+  const km = last ? last.km : (Number.isNaN(savedKm) ? null : savedKm);
+  if (km == null) return;
+  state.km = km;
+  const p = state.data.route.reduce((a, b) => Math.abs(b.km - km) < Math.abs(a.km - km) ? b : a);
+  state.lat = last ? last.lat : p.lat;
+  state.lon = last ? last.lon : p.lon;
+  $('manual-km').value = km;
+  const ageMin = last ? Math.round((Date.now() - new Date(last.t).getTime()) / 60000) : null;
+  const age = ageMin == null ? '' : ageMin < 60 ? ` (${ageMin}분 전)` : ` (${Math.round(ageMin / 60)}시간 전)`;
+  $('pos-status').textContent = `🕐 마지막 기록 기준${age} — GPS 자동 갱신 중…`;
+  render();
+})();
+
+// GPS 자동 시작 — 피곤한 사용자는 버튼을 누르지 않는다
+locateGPS();
 
 // ---- 오프라인 캐시 등록 ----
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
