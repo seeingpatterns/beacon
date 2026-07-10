@@ -4,7 +4,7 @@ import { SUPPLY, nextPoi, stopsWithReach } from './lib/plan.js';
 import { pushCrumb, sosText } from './lib/beacon.js';
 
 const $ = id => document.getElementById(id);
-const state = { data: null, km: null, lat: null, lon: null };
+const state = { data: null, km: null, lat: null, lon: null, basis: null };
 
 // ---- 터미널 연출 ----
 // 시스템 로그: 화면 아래 패널에 "> 메시지" 한 줄 추가 (최근 30줄만 유지)
@@ -75,10 +75,16 @@ function locateGPS() {
       // 단, 마지막 신호는 진짜 좌표를 기록한다 — 구조에 필요한 건 경로가 아니라 진실
       recordCrumb({ km: null, lat, lon, src: 'gps-offroute' });
       log('경로 밖이지만 SOS용 실제 좌표는 저장됨');
+      // 옛 답이 떠 있으면 근거 줄을 경고로 교체 — "지금 위치" 답으로 오독 방지
+      if (state.km != null) {
+        state.basis = `⚠️ 지금 GPS는 경로 밖 — 아래는 마지막 입력(${Math.round(state.km)}km) 기준`;
+        render();
+      }
       return;
     }
     $('off-route').classList.add('hidden');
     state.km = hit.km; state.lat = lat; state.lon = lon;
+    state.basis = `📍 방금 GPS — 경로 ${hit.km.toFixed(0)}km 지점`;
     $('pos-status').textContent = `📍 경로상 ${hit.km.toFixed(0)}km 지점 (경로에서 ${hit.offKm.toFixed(1)}km)`;
     log(`GPS 고정: 경로 ${hit.km.toFixed(0)}km 지점`);
     recordCrumb({ km: hit.km, lat, lon, src: 'gps' });
@@ -96,6 +102,7 @@ $('btn-gps').onclick = locateGPS;
 // km 확정 공통 경로 — 위경도는 경로점에서 역산 (일몰 계산용)
 function applyKm(v, statusText, src) {
   state.km = v;
+  state.basis = statusText;
   localStorage.setItem('nc.manualKm', String(v));
   const p = state.data.route.reduce((a, b) => Math.abs(b.km - v) < Math.abs(a.km - v) ? b : a);
   state.lat = p.lat; state.lon = p.lon;
@@ -141,6 +148,8 @@ function fmtPoi(p) {
 
 function render() {
   if (state.km == null) return;
+  // 답의 근거를 답 옆에 — 피곤한 사용자가 옛 위치 기준 답을 "지금"으로 오독하지 않게
+  $('verdict-basis').textContent = state.basis ? `기준: ${state.basis}` : '';
   const { pois } = state.data;
   const speed = parseFloat($('speed').value) || 18;
   const sunset = sunsetUTC(new Date(), state.lat, state.lon);
@@ -229,6 +238,7 @@ if (window.navigator.standalone) $('install-tip').classList.add('hidden');
   $('manual-km').value = km;
   const ageMin = last ? Math.round((Date.now() - new Date(last.t).getTime()) / 60000) : null;
   const age = ageMin == null ? '' : ageMin < 60 ? ` (${ageMin}분 전)` : ` (${Math.round(ageMin / 60)}시간 전)`;
+  state.basis = `🕐 마지막 기록${age} — ${Math.round(km)}km 지점`;
   $('pos-status').textContent = `🕐 마지막 기록 기준${age} — GPS 자동 갱신 중…`;
   render();
 })();

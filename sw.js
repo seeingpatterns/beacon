@@ -1,6 +1,6 @@
 // 오프라인의 심장: 설치 때 모든 자산을 통째로 캐시하고, 이후 요청은 캐시 우선.
 // 파일이 바뀌면 CACHE 버전을 올려야 갱신된다 (v1 → v2).
-const CACHE = 'nc-v10'; // v10: 열면 즉답 — GPS 자동 시작 + 마지막 기록 즉시 표시 + 판단 최상단
+const CACHE = 'nc-v11'; // v11: 판단 패널에 근거 줄 — 답이 어느 위치·언제 기준인지 명시
 const ASSETS = ['./', './index.html', './app.js', './lib/geo.js', './lib/sun.js',
   './lib/plan.js', './lib/beacon.js', './route-data.json', './manifest.webmanifest', './icon-180.png'];
 
