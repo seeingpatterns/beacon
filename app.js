@@ -2,9 +2,51 @@ import { projectToRoute } from './lib/geo.js';
 import { sunsetUTC } from './lib/sun.js';
 import { SUPPLY, nextPoi, stopsWithReach } from './lib/plan.js';
 import { pushCrumb, sosText } from './lib/beacon.js';
+import { STR, fmt } from './lib/i18n.js';
 
 const $ = id => document.getElementById(id);
-const state = { data: null, km: null, lat: null, lon: null, basis: null };
+const state = { data: null, km: null, lat: null, lon: null, basis: null, status: null };
+
+// ---- 언어 (ko/en 토글 — SOS 문자는 토글 무관 항상 병기) ----
+let lang = localStorage.getItem('nc.lang') || 'ko';
+const T = (k, vars) => fmt(STR[lang][k] ?? k, vars);
+
+// {k, v, ageT} → 현재 언어 문장. ageT가 있으면 "N분/시간 전"을 매번 새로 계산한다.
+function resolve(kv) {
+  const vars = { ...(kv.v || {}) };
+  if (kv.ageT) {
+    const m = Math.round((Date.now() - kv.ageT) / 60000);
+    vars.age = m < 60 ? T('age_min', { m }) : T('age_hr', { h: Math.round(m / 60) });
+  } else vars.age = '';
+  return T(kv.k, vars);
+}
+
+function setStatus(kv) { state.status = kv; renderStatus(); }
+function renderStatus() {
+  $('pos-status').textContent = state.status ? resolve(state.status) : T('pos_checking');
+}
+
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const s = STR[lang][el.dataset.i18n]; if (s != null) el.innerHTML = s;
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    const s = STR[lang][el.dataset.i18nPh]; if (s != null) el.placeholder = s;
+  });
+  $('manual-ko').classList.toggle('hidden', lang !== 'ko');
+  $('manual-en').classList.toggle('hidden', lang !== 'en');
+  $('lang-btn').textContent = lang === 'ko' ? 'EN' : '한국어';
+  renderStatus();
+  renderLastCrumb();
+  renderDataNote();
+  if (state.km != null) render();
+}
+$('lang-btn').onclick = () => {
+  lang = lang === 'ko' ? 'en' : 'ko';
+  localStorage.setItem('nc.lang', lang);
+  applyLang();
+};
 
 // ---- 터미널 연출 ----
 // 시스템 로그: 화면 아래 패널에 "> 메시지" 한 줄 추가 (최근 30줄만 유지)
@@ -55,65 +97,69 @@ setInterval(() => { $('clock').textContent = new Date().toTimeString().slice(0, 
 // ---- 데이터 로드 (서비스 워커 캐시에서 — 오프라인 동작) ----
 const res = await fetch('./route-data.json');
 state.data = await res.json();
-$('data-note').textContent =
-  `경로 ${state.data.totalKm.toFixed(0)}km · POI ${state.data.pois.length}개 · ` +
-  `미확인 POI는 이름 옆 ⚠️ — 데이터 기준 ${state.data.generated.slice(0, 10)}`;
-log('시스템 시작 — 오프라인 모드 준비 완료');
-log(`경로 데이터 로드: ${state.data.totalKm.toFixed(0)}km · POI ${state.data.pois.length}개`);
+function renderDataNote() {
+  $('data-note').textContent = T('data_note', {
+    total: state.data.totalKm.toFixed(0),
+    n: state.data.pois.length,
+    date: state.data.generated.slice(0, 10),
+  });
+}
+renderDataNote();
+log(T('log_start'));
+log(T('log_data', { total: state.data.totalKm.toFixed(0), n: state.data.pois.length }));
 
 // ---- 위치 ----
 // 피곤한 사용자 원칙: 앱을 여는 것이 질문이다. 버튼은 재시도용일 뿐, GPS는 열자마자 자동 시작.
 function locateGPS() {
-  $('pos-status').textContent = 'GPS 잡는 중… (하늘이 보이는 곳에서)';
+  setStatus({ k: 'gps_fixing' });
   navigator.geolocation.getCurrentPosition(pos => {
     const { latitude: lat, longitude: lon } = pos.coords;
     const hit = projectToRoute(state.data.route, lat, lon);
     if (hit.offKm > 20) { // 틀린 안내 금지: 경로 밖에선 보급 계산을 하지 않는다
       $('off-route').classList.remove('hidden');
-      $('pos-status').textContent = `경로에서 ${hit.offKm.toFixed(0)}km 벗어남`;
-      log(`경로 이탈 감지: ${hit.offKm.toFixed(0)}km — 보급 계산 중단`, 'warn');
+      setStatus({ k: 'st_offroute', v: { off: hit.offKm.toFixed(0) } });
+      log(T('log_offroute', { off: hit.offKm.toFixed(0) }), 'warn');
       // 단, 마지막 신호는 진짜 좌표를 기록한다 — 구조에 필요한 건 경로가 아니라 진실
       recordCrumb({ km: null, lat, lon, src: 'gps-offroute' });
-      log('경로 밖이지만 SOS용 실제 좌표는 저장됨');
+      log(T('log_offroute_saved'));
       // 옛 답이 떠 있으면 근거 줄을 경고로 교체 — "지금 위치" 답으로 오독 방지
       if (state.km != null) {
-        state.basis = `⚠️ 지금 GPS는 경로 밖 — 아래는 마지막 입력(${Math.round(state.km)}km) 기준`;
+        state.basis = { k: 'basis_offroute', v: { km: Math.round(state.km) } };
         render();
       }
       return;
     }
     $('off-route').classList.add('hidden');
     state.km = hit.km; state.lat = lat; state.lon = lon;
-    state.basis = `📍 방금 GPS — 경로 ${hit.km.toFixed(0)}km 지점`;
-    $('pos-status').textContent = `📍 경로상 ${hit.km.toFixed(0)}km 지점 (경로에서 ${hit.offKm.toFixed(1)}km)`;
-    log(`GPS 고정: 경로 ${hit.km.toFixed(0)}km 지점`);
+    state.basis = { k: 'basis_gps', v: { km: hit.km.toFixed(0) } };
+    setStatus({ k: 'st_gps_fixed', v: { km: hit.km.toFixed(0), off: hit.offKm.toFixed(1) } });
+    log(T('log_gps_fixed', { km: hit.km.toFixed(0) }));
     recordCrumb({ km: hit.km, lat, lon, src: 'gps' });
     render();
   }, err => {
     // 자동 시도가 실패해도 마지막 기록 기준 답은 이미 화면에 있다 — 조용히 알리고 유지
-    const stale = state.km != null ? ' (아래 답은 마지막 기록 기준)' : ' — 아래에 표지판/km를 입력하세요';
-    $('pos-status').textContent = 'GPS 실패' + stale + ' · ' + err.message;
-    log('GPS 실패: ' + err.message, 'err');
+    setStatus({ k: state.km != null ? 'gps_fail_stale' : 'gps_fail_input', v: { err: err.message } });
+    log('GPS: ' + err.message, 'err');
   },
   { enableHighAccuracy: true, timeout: 15000 });
 }
 $('btn-gps').onclick = locateGPS;
 
 // km 확정 공통 경로 — 위경도는 경로점에서 역산 (일몰 계산용)
-function applyKm(v, statusText, src) {
+function applyKm(v, statusKV, src) {
   state.km = v;
-  state.basis = statusText;
+  state.basis = statusKV;
   localStorage.setItem('nc.manualKm', String(v));
   const p = state.data.route.reduce((a, b) => Math.abs(b.km - v) < Math.abs(a.km - v) ? b : a);
   state.lat = p.lat; state.lon = p.lon;
-  $('pos-status').textContent = statusText;
+  setStatus(statusKV);
   recordCrumb({ km: v, lat: p.lat, lon: p.lon, src });
   render();
 }
 
 $('manual-km').oninput = e => {
   const v = parseFloat(e.target.value);
-  if (!Number.isNaN(v)) applyKm(v, `⌨️ 수동 입력: ${v}km 지점`, 'manual');
+  if (!Number.isNaN(v)) applyKm(v, { k: 'st_manual', v: { km: v } }, 'manual');
 };
 
 // 표지판 모드: 라이더가 아는 건 "다음 도시까지 남은 km"다. 뺄셈은 앱이 한다.
@@ -129,10 +175,10 @@ function applySign() {
   const name = $('sign-poi').selectedOptions[0].textContent;
   const v = Math.round((poiKm - rem) * 10) / 10;
   if (v < 0) {
-    $('pos-status').textContent = `⚠️ ${name}까지 ${rem}km면 경로 시작 전이에요 — 도시 선택을 확인하세요`;
+    setStatus({ k: 'sign_invalid', v: { name, rem } });
     return;
   }
-  applyKm(v, `🪧 ${name} ${rem}km 전 = 멜버른 기준 ${Math.round(v)}km 지점`, 'sign');
+  applyKm(v, { k: 'st_sign', v: { name, rem, km: Math.round(v) } }, 'sign');
 }
 $('sign-poi').onchange = applySign;
 $('sign-km').oninput = applySign;
@@ -142,14 +188,14 @@ $('speed').oninput = e => { localStorage.setItem('nc.speed', e.target.value); re
 
 // ---- 판단 렌더 ----
 function fmtPoi(p) {
-  if (!p) return '앞에 없음';
+  if (!p) return T('poi_none');
   return `${p.distKm ?? (p.km - state.km).toFixed(0)}km · ${p.name}${p.verified ? '' : ' ⚠️'}`;
 }
 
 function render() {
   if (state.km == null) return;
   // 답의 근거를 답 옆에 — 피곤한 사용자가 옛 위치 기준 답을 "지금"으로 오독하지 않게
-  $('verdict-basis').textContent = state.basis ? `기준: ${state.basis}` : '';
+  $('verdict-basis').textContent = state.basis ? T('basis_prefix') + resolve(state.basis) : '';
   const { pois } = state.data;
   const speed = parseFloat($('speed').value) || 18;
   const sunset = sunsetUTC(new Date(), state.lat, state.lon);
@@ -160,12 +206,12 @@ function render() {
   $('next-shop').textContent = fmtPoi(nextPoi(pois, state.km, SUPPLY.shop));
   $('sunset-left').textContent = hoursLeft > 0
     ? `${Math.floor(hoursLeft)}h ${Math.round(hoursLeft % 1 * 60)}m`
-    : '해 졌음 — 라이딩 종료';
+    : T('sunset_over');
 
   $('stops').innerHTML = stopsWithReach(pois, state.km, hoursLeft, speed)
-    .map(s => `<div class="row"><span>${s.name}${s.verified ? '' : ' <span class="warn-badge">⚠️미확인</span>'}</span>` +
+    .map(s => `<div class="row"><span>${s.name}${s.verified ? '' : ` <span class="warn-badge">${T('unverified')}</span>`}</span>` +
       `<b class="${s.beforeSunset ? 'ok' : 'no'}">${s.distKm}km ${s.beforeSunset ? '✅' : '❌'}</b></div>`)
-    .join('') || '<p class="sub">400km 안에 POI 없음</p>';
+    .join('') || `<p class="sub">${T('stops_empty')}</p>`;
 
   $('verdict').classList.remove('hidden');
   $('stops-card').classList.remove('hidden');
@@ -186,9 +232,10 @@ function recordCrumb({ km, lat, lon, src }) {
 function renderLastCrumb() {
   const last = loadCrumbs().at(-1);
   if (!last) return;
-  const when = new Date(last.t).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-  const where = last.km != null ? `${Math.round(last.km)}km 지점` : '경로 밖 — GPS 좌표 저장됨';
-  $('last-crumb').textContent = `마지막 기록: ${when} · ${where} (${loadCrumbs().length}개 저장됨)`;
+  const when = new Date(last.t).toLocaleString(lang === 'ko' ? 'ko-KR' : 'en-AU',
+    { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const where = last.km != null ? T('crumb_km', { km: Math.round(last.km) }) : T('crumb_off');
+  $('last-crumb').textContent = T('crumb_last', { when, where, n: loadCrumbs().length });
 }
 
 function currentSosText() {
@@ -203,31 +250,29 @@ $('family-num').oninput = e => localStorage.setItem('nc.familyNum', e.target.val
 
 $('btn-sos-sms').onclick = () => {
   const text = currentSosText();
-  if (!text) { log('보낼 위치가 없음 — 먼저 GPS를 잡으세요', 'err'); return; }
+  if (!text) { log(T('sos_need_fix'), 'err'); return; }
   const num = localStorage.getItem('nc.familyNum') || '';
-  log('위치 문자 초안 생성 — 신호 잡히면 전송하세요', 'warn');
+  log(T('log_sms_draft'), 'warn');
   location.href = `sms:${num}&body=${encodeURIComponent(text)}`; // iOS는 &body= 문법
 };
 
 $('btn-sos-copy').onclick = async () => {
   const text = currentSosText();
-  if (!text) { log('복사할 위치가 없음 — 먼저 GPS를 잡으세요', 'err'); return; }
+  if (!text) { log(T('copy_need_fix'), 'err'); return; }
   await navigator.clipboard.writeText(text);
-  log('위치 복사됨 — 아무 데나 붙여넣기 가능');
-  $('btn-sos-copy').textContent = '✅ 복사됨';
-  setTimeout(() => { $('btn-sos-copy').textContent = '📋 위치 복사'; }, 1500);
+  log(T('log_copied'));
+  $('btn-sos-copy').textContent = T('btn_copied');
+  setTimeout(() => { $('btn-sos-copy').textContent = T('btn_sos_copy'); }, 1500);
 };
-
-renderLastCrumb();
 
 // ---- 초기 상태 복원 + 홈화면 안내 ----
 if (window.navigator.standalone) $('install-tip').classList.add('hidden');
+applyLang();
 
 // 열자마자 대답한다: GPS를 기다리지 않고 마지막 기록 기준으로 먼저 판단을 띄운다.
 // (새 crumb은 기록하지 않는다 — 복원은 이동이 아니다)
 (function restoreLast() {
-  const last = loadCrumbs().findLast?.(c => c.km != null) ??
-               [...loadCrumbs()].reverse().find(c => c.km != null);
+  const last = [...loadCrumbs()].reverse().find(c => c.km != null);
   const savedKm = parseFloat(localStorage.getItem('nc.manualKm'));
   const km = last ? last.km : (Number.isNaN(savedKm) ? null : savedKm);
   if (km == null) return;
@@ -236,10 +281,9 @@ if (window.navigator.standalone) $('install-tip').classList.add('hidden');
   state.lat = last ? last.lat : p.lat;
   state.lon = last ? last.lon : p.lon;
   $('manual-km').value = km;
-  const ageMin = last ? Math.round((Date.now() - new Date(last.t).getTime()) / 60000) : null;
-  const age = ageMin == null ? '' : ageMin < 60 ? ` (${ageMin}분 전)` : ` (${Math.round(ageMin / 60)}시간 전)`;
-  state.basis = `🕐 마지막 기록${age} — ${Math.round(km)}km 지점`;
-  $('pos-status').textContent = `🕐 마지막 기록 기준${age} — GPS 자동 갱신 중…`;
+  const ageT = last ? new Date(last.t).getTime() : null;
+  state.basis = { k: 'basis_restore', v: { km: Math.round(km) }, ageT };
+  setStatus({ k: 'st_restore', ageT });
   render();
 })();
 

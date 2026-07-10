@@ -91,6 +91,7 @@
   @keyframes blink { 50% { opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { h1::after { animation: none; } }
   #clock { color: #44EE88; font-size: 14px; }
+  #lang-btn { width: auto; font-size: 12px; padding: 3px 9px; margin-right: 8px; font-weight: 700; }
   .sub { color: #3E8F63; font-size: 13px; padding: 0 10px 8px; }
 
   /* ── 패널(카드) ── */
@@ -178,18 +179,18 @@
         <div class="handlebars"></div>
       </div>
     </div>
-    <div class="titlebar"><h1>🚲 BEACON</h1><span id="clock">--:--:--</span></div>
-    <p class="sub">인터넷 없이 동작 · 보급 · 일몰 · 마지막 신호 · 사용자 1인 전용</p>
+    <div class="titlebar"><h1>🚲 BEACON</h1><span><button id="lang-btn">EN</button><span id="clock">--:--:--</span></span></div>
+    <p class="sub" data-i18n="sub_header">인터넷 없이 동작 · 보급 · 일몰 · 마지막 신호 · 사용자 1인 전용</p>
   </header>
 
-  <div class="card" id="install-tip">
+  <div class="card" id="install-tip" data-i18n="install_tip">
     📲 <b>사파리 공유 버튼 → "홈 화면에 추가"</b>를 꼭 해주세요.
     그래야 인터넷 없는 구간에서도 열립니다. (추가 안 하면 iOS가 7일 뒤 저장소를 지울 수 있어요)
   </div>
 
   <details id="help">
-    <summary>📖 사용법 — 처음에 딱 한 번 읽어주세요</summary>
-    <div class="manual">
+    <summary data-i18n="help_summary">📖 사용법 — 처음에 딱 한 번 읽어주세요</summary>
+    <div class="manual" id="manual-ko">
       <h3>이 앱이 뭐냐면</h3>
       <p>인터넷이 <b>안 터져도</b> 되는 생존 도우미예요. 세 가지를 해요:<br>
       ① <b>다음 물/음식/마트까지 몇 km 남았나</b><br>
@@ -261,57 +262,130 @@
       숫자가 이상해요 → km 직접 입력으로 바꿔보기<br>
       "해 졌음" 이라고 떠요 → 오늘 라이딩은 끝. 무리하지 않기 🙂</p>
     </div>
+    <div class="manual hidden" id="manual-en">
+      <h3>What this app is</h3>
+      <p>A survival helper that works with <b>no internet</b>. It does three things:<br>
+      ① <b>How many km to the next water / food / shop</b><br>
+      ② <b>Can you get there before sunset</b><br>
+      ③ <b>Remembers your last position and drafts a text to family</b></p>
+
+      <h3>Once, while you still have internet (most important!)</h3>
+      <div class="steps">
+        1. Open this page in Safari.<br>
+        2. Tap the <b>Share button (square with ↑)</b>.<br>
+        3. Tap <b>"Add to Home Screen"</b>.<br>
+        4. From now on, <b>always open the app from that icon</b>.
+      </div>
+      <p>Skip this and the app <b>won't open</b> in the middle of the desert. Please do it.</p>
+
+      <h3>Every morning (and whenever you're tired)</h3>
+      <div class="steps">
+        <b>Just open the app.</b> GPS starts automatically and the answer appears at the top.<br>
+        While GPS is locking, you'll see answers based on your <b>last record</b> (🕐 tag).<br>
+        If it won't refresh, tap <b>[📍 Retry GPS]</b> once (under open sky).
+      </div>
+
+      <h3>Reading the numbers</h3>
+      <p>💧 Next water <b>32km</b> = water is 32km ahead<br>
+      🌅 Until sunset <b>3h 10m</b> = the sun sets in 3h 10m<br>
+      <b class="ok">✅</b> = reachable before sunset / <b class="no">❌</b> = not today, don't push it<br>
+      <b class="warn-badge">⚠️</b> next to a name = unverified info. <b>Always carry extra water!</b></p>
+
+      <h3>No GPS? Copy the road sign</h3>
+      <p>Road signs say things like <b>"Adelaide 300"</b> — the km left to the next city.
+      Enter exactly that:</p>
+      <div class="steps">
+        1. Pick the <b>city on the sign</b> in the 🪧 box<br>
+        2. Type the <b>number on the sign</b> (km left)<br>
+        3. The app works out where you are. Done!
+      </div>
+      <p>The <b>advanced field</b> is for when there's no sign either: take yesterday's GPS
+      number (e.g. 1,240) and add today's distance (rode 100km → enter 1340).</p>
+
+      <h3>🆘 In danger (remember this order!)</h3>
+      <div class="steps">
+        1. <b>Call 000</b>. If that fails, <b>112</b>. (Try even with no bars!)<br>
+        2. If calls won't connect at all, iPhone shows <b>satellite SOS</b>.
+           Follow the on-screen guide under open sky — it works <b>without internet</b>.<br>
+        3. Tap <b>[📨 Text my location]</b> in the red panel.
+           The text goes out the moment you get even one bar.<br>
+        4. Phone completely dead to the network? <b>Borrow someone's.</b> Flag down a car or
+           use a roadhouse phone to call 000, then tap <b>[📋 Copy location]</b> and
+           <b>read the coordinates out loud</b> (or show the screen).
+           Rescuers can find your exact spot from those numbers.
+      </div>
+      <p>The app <b>auto-saves your position</b> on every GPS fix (like a flight recorder),
+      so "where I last was" always survives.<br>
+      <b>Honest note:</b> with zero bars a text usually can't send. But on <b>iPhone 14 or
+      newer</b>, Messages offers <b>"Send via Satellite"</b> — follow the guide under open sky
+      and it sends with no signal. Failing that, satellite SOS (step 2) is the answer.</p>
+
+      <h3>Who can see my location?</h3>
+      <p><b>Only the person you text.</b> This app has no server.
+      Your position stays <b>on this phone</b>, and texts go <b>directly</b> from your phone
+      to your family. Nobody else — including whoever built the app — can see it.</p>
+
+      <h3>Ask your family in advance</h3>
+      <p>"If my text has <b>🆘 or a map link</b>, open it right away. And if you hear
+      <b>nothing for two days</b>, give my last location to Australian police (000)."
+      — say this once before departure and the app becomes a real safety net.</p>
+
+      <h3>If something looks wrong</h3>
+      <p>White screen → make sure you opened it from the home screen <b>icon</b><br>
+      Numbers look off → try entering km directly<br>
+      It says "Sun is down" → riding is over for today. Don't push it 🙂</p>
+    </div>
   </details>
 
-  <p class="sub" id="pos-status" style="padding:4px 2px 10px">📡 위치 확인 중…</p>
+  <p class="sub" id="pos-status" style="padding:4px 2px 10px" data-i18n="pos_checking">📡 위치 확인 중…</p>
 
-  <div class="card hidden" id="off-route">
+  <div class="card hidden" id="off-route" data-i18n="off_route_card">
     ⚠️ <b>경로에서 20km 이상 벗어나 있어요.</b> 거리 계산은 경로 위에서만 정확합니다.
     아래 표지판 모드나 km 입력을 쓰세요.
   </div>
 
   <div class="card hidden" id="verdict">
-    <span class="panel-title">오늘의 판단</span>
+    <span class="panel-title" data-i18n="verdict_title">오늘의 판단</span>
     <p class="sub" id="verdict-basis" style="padding:0; margin-bottom:6px"></p>
-    <div class="row"><span>💧 다음 물</span><b id="next-water">—</b></div>
-    <div class="row"><span>⛽ 다음 로드하우스/음식</span><b id="next-food">—</b></div>
-    <div class="row"><span>🛒 다음 마트</span><b id="next-shop">—</b></div>
-    <div class="row"><span>🌅 일몰까지</span><b id="sunset-left" class="big">—</b></div>
+    <div class="row"><span data-i18n="row_water">💧 다음 물</span><b id="next-water">—</b></div>
+    <div class="row"><span data-i18n="row_food">⛽ 다음 로드하우스/음식</span><b id="next-food">—</b></div>
+    <div class="row"><span data-i18n="row_shop">🛒 다음 마트</span><b id="next-shop">—</b></div>
+    <div class="row"><span data-i18n="row_sunset">🌅 일몰까지</span><b id="sunset-left" class="big">—</b></div>
   </div>
 
   <div class="card hidden" id="stops-card">
-    <label>앞으로 400km (✅ = 오늘 일몰 전 도달 가능 / ❌ = 무리)</label>
+    <label data-i18n="stops_label">앞으로 400km (✅ = 오늘 일몰 전 도달 가능 / ❌ = 무리)</label>
     <div id="stops"></div>
   </div>
 
   <div class="card">
-    <button id="btn-gps">📍 GPS 다시 잡기</button>
+    <button id="btn-gps" data-i18n="btn_gps">📍 GPS 다시 잡기</button>
     <div class="grid2">
-      <div><label>🪧 GPS 안 되면: 표지판의 도시</label><select id="sign-poi"><option value="" disabled selected>도시 선택…</option></select></div>
-      <div><label>표지판의 남은 km</label><input id="sign-km" type="number" inputmode="decimal" placeholder="예: 300"></div>
+      <div><label data-i18n="lbl_sign_city">🪧 GPS 안 되면: 표지판의 도시</label><select id="sign-poi"><option id="sign-ph" value="" disabled selected data-i18n="sign_placeholder">도시 선택…</option></select></div>
+      <div><label data-i18n="lbl_sign_km">표지판의 남은 km</label><input id="sign-km" type="number" inputmode="decimal" placeholder="예: 300"></div>
     </div>
     <div class="grid2">
-      <div><label>고급: 멜버른 기준 km 직접</label><input id="manual-km" type="number" inputmode="decimal" placeholder="어제 지점+오늘 km"></div>
-      <div><label>평균 속도 km/h</label><input id="speed" type="number" inputmode="decimal" value="18"></div>
+      <div><label data-i18n="lbl_manual_km">고급: 멜버른 기준 km 직접</label><input id="manual-km" type="number" inputmode="decimal" placeholder="어제 지점+오늘 km" data-i18n-ph="ph_manual_km"></div>
+      <div><label data-i18n="lbl_speed">평균 속도 km/h</label><input id="speed" type="number" inputmode="decimal" value="18"></div>
     </div>
   </div>
 
   <div class="card sos">
-    <span class="panel-title">🆘 비상 — 마지막 신호</span>
-    <p class="sub" id="last-crumb" style="padding:0; margin-bottom:8px">아직 기록된 위치 없음 — GPS를 한 번 잡으면 자동 저장됩니다.</p>
+    <span class="panel-title" data-i18n="sos_title">🆘 비상 — 마지막 신호</span>
+    <p class="sub" id="last-crumb" style="padding:0; margin-bottom:8px" data-i18n="sos_no_record">아직 기록된 위치 없음 — GPS를 한 번 잡으면 자동 저장됩니다.</p>
     <div class="grid2" style="margin-top:0">
-      <button id="btn-sos-sms">📨 가족에게 위치 문자</button>
-      <button id="btn-sos-copy">📋 위치 복사</button>
+      <button id="btn-sos-sms" data-i18n="btn_sos_sms">📨 가족에게 위치 문자</button>
+      <button id="btn-sos-copy" data-i18n="btn_sos_copy">📋 위치 복사</button>
     </div>
     <div style="margin-top:8px">
-      <label>가족 전화번호 (국가번호 포함 — 한 번만 입력하면 저장됨)</label>
+      <label data-i18n="lbl_family">가족 전화번호 (국가번호 포함 — 한 번만 입력하면 저장됨)</label>
       <input id="family-num" type="tel" placeholder="+8210xxxxxxxx">
     </div>
-    <p class="sub">진짜 응급: <b>000</b> 전화 (안 되면 <b>112</b>) → 전화가 아예 안 터지면 iPhone이 <b>위성 SOS</b> 안내를 띄웁니다. 문자는 신호가 1칸이라도 잡히는 순간 나갑니다.</p>
+    <p class="sub" data-i18n="family_help">진짜 응급: <b>000</b> 전화 (안 되면 <b>112</b>) → 전화가 아예 안 터지면 iPhone이 <b>위성 SOS</b> 안내를 띄웁니다. 문자는 신호가 1칸이라도 잡히는 순간 나갑니다.</p>
   </div>
 
   <div class="card">
-    <span class="panel-title">시스템 로그</span>
+    <span class="panel-title" data-i18n="log_title">시스템 로그</span>
     <div id="console"></div>
   </div>
 
