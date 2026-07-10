@@ -1,0 +1,9 @@
+{
+  "name": "BEACON",
+  "short_name": "BEACON",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0A150A",
+  "theme_color": "#0A150A",
+  "icons": [{ "src": "icon-180.png", "sizes": "180x180", "type": "image/png" }]
+}

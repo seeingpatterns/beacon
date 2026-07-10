@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0A150A">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>BEACON</title>
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: "SF Mono", Menlo, Consolas, monospace; background: #0A150A; color: #BFFFD9;
+         font-size: 17px; padding: 12px; max-width: 560px; margin: 0 auto; }
+
+  /* ── 터미널 헤더 ── */
+  header { border: 1px solid rgba(51,255,153,.45); margin-bottom: 12px; position: relative; }
+  #matrix { display: block; width: 100%; height: 110px; background: #0A150A; }
+  .scene { position: absolute; top: 0; left: 0; right: 0; height: 110px; overflow: hidden; }
+
+  /* ── CSS 자전거 (SCSS 원본 구조를 CSS 변수로 이식 — 좌표 0.35 스케일) ── */
+  .bicycle-container {
+    --wr: 42px;   /* wheelRadius */
+    --th: 2px;    /* tubeHeight */
+    --tw: 35px;   /* tubeWidth */
+    --frame: #33FF99; --accent: #BFFFD9; --dim: #1E6B44;
+    position: absolute; margin: auto; left: 0; right: 0; bottom: 4px;
+    max-width: 130px; height: 96px;
+  }
+  .wheel { position: absolute; margin: auto; top: 0; bottom: 0;
+           width: var(--wr); height: var(--wr); }
+  .back-wheel { left: 0; } .front-wheel { right: 0; }
+  .tire { position: absolute; inset: 0; margin: auto; width: inherit; height: inherit;
+          border-radius: 50%; border: 3px solid var(--frame); z-index: 2; }
+  .rim  { position: absolute; inset: 0; margin: auto; width: calc(var(--wr)*.95); height: calc(var(--wr)*.95);
+          border-radius: 50%; border: 3px solid var(--dim); z-index: 1; }
+  .spokes { position: absolute; inset: 0; margin: auto; width: calc(var(--wr)*.65); height: calc(var(--wr)*.65);
+            border-radius: 50%; border: 1px solid transparent; border-top: 1px solid var(--accent);
+            background: rgba(51,255,153,.06); z-index: 1; animation: rt 2s infinite linear; }
+  .spokes + .spokes { border-top-color: transparent; border-bottom: 1px solid var(--accent); }
+  .hub { position: absolute; inset: 0; margin: auto; width: calc(var(--wr)*.2); height: calc(var(--wr)*.2);
+         border-radius: 50%; background: var(--accent); }
+  .gear { position: absolute; margin: auto; top: 0; bottom: 0; left: calc(var(--wr)*1.33);
+          width: calc(var(--wr)*.3); height: calc(var(--wr)*.3); border-radius: 50%;
+          background: var(--dim); z-index: 4; animation: rt 3s infinite linear; }
+  .gear-red { position: absolute; inset: 0; margin: auto; width: calc(var(--wr)*.2); height: calc(var(--wr)*.2);
+              border-radius: 50%; border: 1px solid var(--frame); }
+  .pedal { position: absolute; margin: auto; top: -17px; right: 0; bottom: 0; left: 0;
+           width: 7px; height: 2px; background: var(--accent); border-radius: 2px; z-index: 3; }
+  .tube { position: absolute; margin: auto; top: 0; bottom: 0; height: var(--th);
+          border-radius: var(--th); background: var(--frame); z-index: 3; }
+  .chain-tube      { left: calc(var(--wr)/2); width: calc(var(--tw)*1.2); }
+  .seat-tube-back  { left: calc(var(--wr)/2); transform-origin: left;  transform: rotate(-60deg); width: calc(var(--tw)*1.2); }
+  .seat-tube-front { left: calc(var(--wr)/2); transform-origin: right; transform: rotate(60deg);  width: calc(var(--tw)*1.2); }
+  .seat-tube-post  { left: calc(var(--wr)/2 - 7px); transform-origin: right; transform: rotate(60deg);
+                     width: calc(var(--tw)*1.4); height: 1px; background: var(--dim); z-index: 1; }
+  .top-tube  { left: var(--wr); bottom: initial; top: 15px; width: calc(var(--tw)*1.13); }
+  .top-handlebar-tube  { right: calc(var(--wr) - 3px);  bottom: initial; top: 9px; width: calc(var(--tw)*.2);  background: var(--dim); }
+  .top-handlebar-tube2 { right: calc(var(--wr) - 10px); bottom: initial; top: 9px; width: calc(var(--tw)*.25); background: var(--frame); border-radius: 0; }
+  .down-tube { left: calc(var(--wr)*1.5); width: var(--tw); transform-origin: left; transform: rotate(-50deg); }
+  .head-tube      { right: calc(var(--wr)/2); transform-origin: right; transform: rotate(60deg); width: calc(var(--tw)*1.2); }
+  .head-tube-post { right: calc(var(--wr)/2); transform-origin: right; transform: rotate(60deg);
+                    width: calc(var(--tw)*1.4); height: 1px; background: var(--dim); z-index: 1; }
+  .saddle { position: absolute; margin: auto; top: 7px; left: calc(var(--tw)*.85);
+            width: 18px; height: 4px; background: var(--accent); z-index: 2;
+            border-top-left-radius: 50%; border-top-right-radius: 100%; border-bottom-left-radius: 50%; }
+  .handlebars { position: absolute; margin: auto; top: 9px; right: calc(var(--tw)/2 + 9px);
+                width: 11px; height: 11px; z-index: 2;
+                border-top-right-radius: 50%; border-bottom-right-radius: 50%;
+                border-top: var(--th) solid var(--frame); border-right: var(--th) solid var(--frame);
+                border-bottom: var(--th) solid transparent; }
+  .ground-container { position: absolute; inset: 0; overflow: hidden; }
+  .ground { position: absolute; background: var(--dim, #1E6B44); animation: mv infinite linear; }
+  .ground1 { bottom: 8px;  right: -60px; width: 36px; height: 2px; border-radius: 4px; animation-duration: 3s; z-index: 5; }
+  .ground2 { bottom: 30px; right: -90px; width: 36px; height: 1px; border-radius: 4px; animation-duration: 4s; }
+  .ground3 { top: 18px; right: -110px; width: 36px; height: 1px; border-radius: 4px; animation-duration: 5s; }
+  .ground1::before { content: ""; position: absolute; top: -8px; left: 52px; width: 14px; height: 8px;
+                     border-top-right-radius: 60%; border-top-left-radius: 30%; border-bottom-left-radius: 20%;
+                     background: #103322; }
+  .ground3::before { content: ""; position: absolute; top: 3px; left: -36px; width: 5px; height: 3px;
+                     border-top-right-radius: 60%; border-top-left-radius: 30%; background: #103322; }
+  @keyframes rt { 100% { transform: rotate(360deg); } }
+  @keyframes mv { 100% { right: 620px; } }
+  @media (prefers-reduced-motion: reduce) { .spokes, .gear, .ground { animation: none; } }
+  .titlebar { display: flex; justify-content: space-between; align-items: baseline;
+              padding: 8px 10px; border-top: 1px solid rgba(51,255,153,.25); }
+  h1 { font-size: 17px; color: #33FF99; font-weight: 700; letter-spacing: 1px; }
+  h1::after { content: "▊"; animation: blink 1.1s step-end infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { h1::after { animation: none; } }
+  #clock { color: #44EE88; font-size: 14px; }
+  .sub { color: #3E8F63; font-size: 13px; padding: 0 10px 8px; }
+
+  /* ── 패널(카드) ── */
+  .card { background: rgba(51,255,153,.04); border: 1px solid rgba(51,255,153,.35);
+          padding: 12px; margin-bottom: 12px; }
+  .card > label:first-child, .panel-title { display: block; color: #33FF99; font-size: 12px;
+          letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+  .panel-title::before, .card > label:first-child::before { content: "── "; color: #1E6B44; }
+  .panel-title::after, .card > label:first-child::after { content: " ──"; color: #1E6B44; }
+
+  .row { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0;
+         border-bottom: 1px dashed rgba(51,255,153,.2); }
+  .row b { text-align: right; }
+  .row:last-child { border-bottom: none; }
+  .big { font-size: 30px; font-weight: 700; color: #FFFFFF; }
+  .ok { color: #33FF99; } .no { color: #FF6B6B; } .warn-badge { color: #FFD166; font-size: 13px; }
+
+  button { font-size: 17px; padding: 12px 16px; border: 1px solid #33FF99; background: #103322;
+           color: #33FF99; font-weight: 700; width: 100%; font-family: inherit; }
+  button:active { background: #33FF99; color: #0A150A; }
+  button.ghost { border-color: rgba(51,255,153,.4); color: #8FE6BB; background: transparent; }
+  input, select { font-size: 17px; padding: 10px; border: 1px solid rgba(51,255,153,.4);
+                  background: #061006; color: #BFFFD9; width: 100%; font-family: inherit; }
+  input::placeholder { color: #2E6B4A; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .grid2 > * { min-width: 0; } /* input 내재 최소폭이 좁은 화면에서 가로 오버플로를 만드는 것 방지 */
+  input { min-width: 0; }
+  #install-tip { border-color: #FFD166; background: rgba(255,209,102,.06); color: #FFE7AF; }
+  .hidden { display: none; }
+  label { font-size: 13px; color: #3E8F63; display: block; margin-bottom: 4px; }
+
+  /* ── 비상(SOS) ── */
+  .sos { border-color: rgba(255,107,107,.7); background: rgba(255,107,107,.05); }
+  .sos .panel-title { color: #FF6B6B; }
+  .sos button { border-color: #FF6B6B; color: #FF6B6B; background: rgba(255,107,107,.08); }
+  .sos button:active { background: #FF6B6B; color: #0A150A; }
+  .sos .sub { padding: 0; margin-top: 8px; }
+
+  /* ── 이벤트 콘솔 ── */
+  #console { font-size: 13px; color: #44EE88; max-height: 120px; overflow-y: auto;
+             line-height: 1.5; word-break: break-all; }
+  #console .err { color: #FF6B6B; } #console .warn { color: #FFD166; }
+
+  /* ── 사용법 ── */
+  details { border: 1px solid rgba(51,255,153,.35); margin-bottom: 12px; }
+  summary { padding: 12px; color: #33FF99; font-weight: 700; cursor: pointer; list-style: none; }
+  summary::before { content: "▸ "; }
+  details[open] summary::before { content: "▾ "; }
+  .manual { padding: 0 12px 12px; font-size: 15px; line-height: 1.7; }
+  .manual h3 { color: #33FF99; font-size: 15px; margin: 14px 0 4px; }
+  .manual b { color: #FFFFFF; }
+  .manual .steps { border-left: 2px solid rgba(51,255,153,.35); padding-left: 10px; margin: 6px 0; }
+</style>
+</head>
+<body>
+  <header>
+    <canvas id="matrix" height="110"></canvas>
+    <div class="scene">
+      <div class="bicycle-container">
+        <div class="ground-container">
+          <div class="ground ground1"></div>
+          <div class="ground ground2"></div>
+          <div class="ground ground3"></div>
+        </div>
+        <div class="wheel back-wheel">
+          <div class="tire"></div><div class="rim"></div>
+          <div class="spokes"></div><div class="spokes"></div><div class="hub"></div>
+        </div>
+        <div class="wheel front-wheel">
+          <div class="tire"></div><div class="rim"></div>
+          <div class="spokes"></div><div class="spokes"></div><div class="hub"></div>
+        </div>
+        <div class="gear"><div class="gear-red"></div><div class="pedal"></div></div>
+        <div class="tube chain-tube"></div>
+        <div class="tube seat-tube-back"></div>
+        <div class="tube seat-tube-front"></div>
+        <div class="tube seat-tube-post"></div>
+        <div class="tube top-tube"></div>
+        <div class="tube top-handlebar-tube"></div>
+        <div class="tube top-handlebar-tube2"></div>
+        <div class="tube down-tube"></div>
+        <div class="tube head-tube"></div>
+        <div class="tube head-tube-post"></div>
+        <div class="saddle"></div>
+        <div class="handlebars"></div>
+      </div>
+    </div>
+    <div class="titlebar"><h1>🚲 BEACON</h1><span id="clock">--:--:--</span></div>
+    <p class="sub">인터넷 없이 동작 · 보급 · 일몰 · 마지막 신호 · 사용자 1인 전용</p>
+  </header>
+
+  <div class="card" id="install-tip">
+    📲 <b>사파리 공유 버튼 → "홈 화면에 추가"</b>를 꼭 해주세요.
+    그래야 인터넷 없는 구간에서도 열립니다. (추가 안 하면 iOS가 7일 뒤 저장소를 지울 수 있어요)
+  </div>
+
+  <details id="help">
+    <summary>📖 사용법 — 처음에 딱 한 번 읽어주세요</summary>
+    <div class="manual">
+      <h3>이 앱이 뭐냐면</h3>
+      <p>인터넷이 <b>안 터져도</b> 되는 생존 도우미예요. 세 가지를 해요:<br>
+      ① <b>다음 물/음식/마트까지 몇 km 남았나</b><br>
+      ② <b>해 지기 전에 거기 도착할 수 있나</b><br>
+      ③ <b>내 마지막 위치를 기억했다가, 가족에게 문자로 알려주기</b></p>
+
+      <h3>딱 한 번, 인터넷 될 때 (제일 중요!)</h3>
+      <div class="steps">
+        1. 사파리에서 이 페이지를 열어요.<br>
+        2. 아래 가운데 <b>공유 버튼(네모에 화살표 ↑)</b>을 눌러요.<br>
+        3. <b>"홈 화면에 추가"</b>를 눌러요.<br>
+        4. 이제 바탕화면에 아이콘이 생겼어요. <b>앞으로는 꼭 이 아이콘으로</b> 열어요.
+      </div>
+      <p>이걸 안 하면? 인터넷 없는 사막 한가운데서 앱이 <b>안 열려요.</b> 꼭 해주세요.</p>
+
+      <h3>매일 아침, 출발 전에</h3>
+      <div class="steps">
+        1. 아이콘 눌러서 앱 열기<br>
+        2. <b>[📍 GPS로 내 위치 잡기]</b> 누르기 (하늘 보이는 곳에서)<br>
+        3. 나오는 숫자 읽기 — 끝!
+      </div>
+
+      <h3>숫자 읽는 법</h3>
+      <p>💧 다음 물 <b>32km</b> = 32km 더 가면 물이 있다<br>
+      🌅 일몰까지 <b>3h 10m</b> = 3시간 10분 뒤에 해가 진다<br>
+      목록에서 <b class="ok">✅</b> = 해 지기 전에 도착 가능 / <b class="no">❌</b> = 오늘은 무리, 욕심내지 말기<br>
+      이름 옆 <b class="warn-badge">⚠️</b> = 확실하지 않은 정보라는 뜻. <b>물은 항상 넉넉하게!</b></p>
+
+      <h3>GPS가 안 잡히면</h3>
+      <p>도로 표지판이나 지도에서 본 <b>km 숫자를 직접 입력</b>하면 똑같이 계산돼요.</p>
+
+      <h3>🆘 위험할 때 (순서 꼭 기억!)</h3>
+      <div class="steps">
+        1. <b>000에 전화</b>해요. 안 되면 <b>112</b>. (신호가 없어 보여도 일단 시도!)<br>
+        2. 전화가 아예 안 되면, iPhone이 <b>"위성 SOS"</b> 화면을 띄워요.
+           하늘이 보이는 곳에서 화면 안내를 따라 폰을 움직이면 <b>인터넷 없이도</b> 구조 요청이 가요.<br>
+        3. 빨간 칸의 <b>[📨 가족에게 위치 문자]</b>를 눌러두세요.
+           신호가 1칸이라도 잡히는 순간 문자가 나가요.<br>
+        4. 내 폰이 완전히 먹통이면? <b>남의 전화를 빌려요.</b> 지나가는 차를 세우거나
+           로드하우스 전화로 000에 신고할 때, <b>[📋 위치 복사]</b>를 눌러 나온
+           <b>좌표 숫자를 소리내어 읽어주세요</b> (또는 화면을 보여주세요).
+           구조대는 이 숫자만 있으면 정확한 지점으로 올 수 있어요.
+      </div>
+      <p>이 앱은 GPS를 잡을 때마다 위치를 <b>자동으로 저장</b>해요 (비행기 블랙박스처럼).
+      그래서 "마지막으로 어디 있었는지"는 항상 남아 있어요.<br>
+      <b>솔직한 말:</b> 신호가 0칸이면 문자는 보통 못 나가요. 단, <b>iPhone 14 이상</b>이면
+      문자 앱이 <b>"위성으로 보내기"</b>를 띄워줘요 — 하늘 아래에서 안내를 따라 하면 신호 없이도 나가요.
+      그것도 안 되면 위성 SOS(2번)가 답이에요.</p>
+
+      <h3>내 위치는 누가 볼 수 있나요?</h3>
+      <p><b>딱 한 사람 — 문자를 받는 사람만.</b> 이 앱은 서버가 없어요.
+      위치는 <b>이 폰 안에만</b> 저장되고, 문자를 보낼 때도 폰에서 가족에게 <b>직접</b> 가요.
+      앱을 만들어준 사람을 포함해 <b>그 누구도</b> 위치를 볼 수 없어요.</p>
+
+      <h3>가족한테 미리 부탁할 것</h3>
+      <p>"내 문자에 <b>🆘나 지도 링크</b>가 오면 바로 열어봐. 그리고 <b>이틀 넘게 아무 소식 없으면</b>
+      호주 경찰(000)에 마지막 위치를 알려줘" — 출발 전에 이 한마디를 해두면 앱이 진짜 안전망이 돼요.</p>
+
+      <h3>뭔가 이상할 때</h3>
+      <p>앱이 하얗게 나와요 → 홈 화면 <b>아이콘</b>으로 열었는지 확인<br>
+      숫자가 이상해요 → km 직접 입력으로 바꿔보기<br>
+      "해 졌음" 이라고 떠요 → 오늘 라이딩은 끝. 무리하지 않기 🙂</p>
+    </div>
+  </details>
+
+  <div class="card">
+    <button id="btn-gps">📍 GPS로 내 위치 잡기</button>
+    <div class="grid2">
+      <div><label>또는 현재 km 직접 입력</label><input id="manual-km" type="number" inputmode="decimal" placeholder="예: 1240"></div>
+      <div><label>평균 속도 km/h</label><input id="speed" type="number" inputmode="decimal" value="18"></div>
+    </div>
+    <p class="sub" id="pos-status" style="margin-top:8px; padding:0">위치를 잡으면 아래 판단이 계산됩니다.</p>
+  </div>
+
+  <div class="card hidden" id="off-route">
+    ⚠️ <b>경로에서 20km 이상 벗어나 있어요.</b> 거리 계산은 경로 위에서만 정확합니다.
+    위의 km 직접 입력을 쓰세요.
+  </div>
+
+  <div class="card hidden" id="verdict">
+    <span class="panel-title">오늘의 판단</span>
+    <div class="row"><span>💧 다음 물</span><b id="next-water">—</b></div>
+    <div class="row"><span>⛽ 다음 로드하우스/음식</span><b id="next-food">—</b></div>
+    <div class="row"><span>🛒 다음 마트</span><b id="next-shop">—</b></div>
+    <div class="row"><span>🌅 일몰까지</span><b id="sunset-left" class="big">—</b></div>
+  </div>
+
+  <div class="card hidden" id="stops-card">
+    <label>앞으로 400km — ✅ 일몰 전 도달 가능</label>
+    <div id="stops"></div>
+  </div>
+
+  <div class="card sos">
+    <span class="panel-title">🆘 비상 — 마지막 신호</span>
+    <p class="sub" id="last-crumb" style="padding:0; margin-bottom:8px">아직 기록된 위치 없음 — GPS를 한 번 잡으면 자동 저장됩니다.</p>
+    <div class="grid2" style="margin-top:0">
+      <button id="btn-sos-sms">📨 가족에게 위치 문자</button>
+      <button id="btn-sos-copy">📋 위치 복사</button>
+    </div>
+    <div style="margin-top:8px">
+      <label>가족 전화번호 (국가번호 포함 — 한 번만 입력하면 저장됨)</label>
+      <input id="family-num" type="tel" placeholder="+8210xxxxxxxx">
+    </div>
+    <p class="sub">진짜 응급: <b>000</b> 전화 (안 되면 <b>112</b>) → 전화가 아예 안 터지면 iPhone이 <b>위성 SOS</b> 안내를 띄웁니다. 문자는 신호가 1칸이라도 잡히는 순간 나갑니다.</p>
+  </div>
+
+  <div class="card">
+    <span class="panel-title">시스템 로그</span>
+    <div id="console"></div>
+  </div>
+
+  <p class="sub" id="data-note" style="padding:0"></p>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
