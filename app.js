@@ -89,18 +89,42 @@ $('btn-gps').onclick = () => {
   { enableHighAccuracy: true, timeout: 15000 });
 };
 
-$('manual-km').oninput = e => {
-  const v = parseFloat(e.target.value);
-  if (Number.isNaN(v)) return;
+// km 확정 공통 경로 — 위경도는 경로점에서 역산 (일몰 계산용)
+function applyKm(v, statusText, src) {
   state.km = v;
   localStorage.setItem('nc.manualKm', String(v));
-  // 수동 입력 시 위경도는 경로점에서 역산 (일몰 계산용)
   const p = state.data.route.reduce((a, b) => Math.abs(b.km - v) < Math.abs(a.km - v) ? b : a);
   state.lat = p.lat; state.lon = p.lon;
-  $('pos-status').textContent = `⌨️ 수동 입력: ${v}km 지점`;
-  recordCrumb({ km: v, lat: p.lat, lon: p.lon, src: 'manual' });
+  $('pos-status').textContent = statusText;
+  recordCrumb({ km: v, lat: p.lat, lon: p.lon, src });
   render();
+}
+
+$('manual-km').oninput = e => {
+  const v = parseFloat(e.target.value);
+  if (!Number.isNaN(v)) applyKm(v, `⌨️ 수동 입력: ${v}km 지점`, 'manual');
 };
+
+// 표지판 모드: 라이더가 아는 건 "다음 도시까지 남은 km"다. 뺄셈은 앱이 한다.
+state.data.pois.forEach(p => {
+  const o = document.createElement('option');
+  o.value = p.km; o.textContent = p.name;
+  $('sign-poi').appendChild(o);
+});
+function applySign() {
+  const rem = parseFloat($('sign-km').value);
+  const poiKm = parseFloat($('sign-poi').value);
+  if (Number.isNaN(rem) || Number.isNaN(poiKm)) return;
+  const name = $('sign-poi').selectedOptions[0].textContent;
+  const v = Math.round((poiKm - rem) * 10) / 10;
+  if (v < 0) {
+    $('pos-status').textContent = `⚠️ ${name}까지 ${rem}km면 경로 시작 전이에요 — 도시 선택을 확인하세요`;
+    return;
+  }
+  applyKm(v, `🪧 ${name} ${rem}km 전 = 멜버른 기준 ${Math.round(v)}km 지점`, 'sign');
+}
+$('sign-poi').onchange = applySign;
+$('sign-km').oninput = applySign;
 
 $('speed').value = localStorage.getItem('nc.speed') || '18';
 $('speed').oninput = e => { localStorage.setItem('nc.speed', e.target.value); render(); };

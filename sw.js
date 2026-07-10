@@ -1,6 +1,6 @@
 // 오프라인의 심장: 설치 때 모든 자산을 통째로 캐시하고, 이후 요청은 캐시 우선.
 // 파일이 바뀌면 CACHE 버전을 올려야 갱신된다 (v1 → v2).
-const CACHE = 'nc-v8'; // v8: km 입력 = "목표 아니라 현위치 눈금" 설명 교정
+const CACHE = 'nc-v9'; // v9: 표지판 모드 — "다음 도시 + 남은 km"로 현위치 자동 계산
 const ASSETS = ['./', './index.html', './app.js', './lib/geo.js', './lib/sun.js',
   './lib/plan.js', './lib/beacon.js', './route-data.json', './manifest.webmanifest', './icon-180.png'];
 

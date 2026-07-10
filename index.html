@@ -218,14 +218,16 @@
       목록에서 <b class="ok">✅</b> = 해 지기 전에 도착 가능 / <b class="no">❌</b> = 오늘은 무리, 욕심내지 말기<br>
       이름 옆 <b class="warn-badge">⚠️</b> = 확실하지 않은 정보라는 뜻. <b>물은 항상 넉넉하게!</b></p>
 
-      <h3>GPS가 안 잡히면 — km 직접 입력</h3>
-      <p>이 숫자는 <b>목표가 아니라 "내가 지금 어디 있나"</b>예요.
-      멜버른에서 퍼스까지 3,721km 줄자가 깔려 있다고 상상하세요 (멜버른 = 0).
-      <b>내가 서 있는 눈금</b>을 넣는 거예요.</p>
+      <h3>GPS가 안 잡히면 — 표지판을 그대로 넣어요</h3>
+      <p>도로 표지판은 <b>"Adelaide 300"</b>처럼 다음 도시까지 남은 km를 알려주죠.
+      그 두 가지를 그대로 넣으면 돼요:</p>
       <div class="steps">
-        실전 요령: 어제 GPS가 <b>1,240</b>이라고 알려줬다 →
-        오늘 GPS가 안 잡힌다 → 오늘 100km 달렸으면 <b>1240 + 100 = 1340</b> 입력. 끝.
+        1. 🪧 칸에서 표지판에 나온 <b>도시를 선택</b><br>
+        2. 옆 칸에 표지판의 <b>숫자(남은 km)</b> 입력<br>
+        3. 내가 어디 있는지는 <b>앱이 계산</b>해요. 끝!
       </div>
+      <p><b>고급 칸</b>은 표지판도 없을 때: 어제 GPS가 알려준 숫자(예: 1,240)에
+      오늘 달린 거리를 더해서 넣어요 (100km 달렸으면 1340).</p>
 
       <h3>🆘 위험할 때 (순서 꼭 기억!)</h3>
       <div class="steps">
@@ -264,7 +266,11 @@
   <div class="card">
     <button id="btn-gps">📍 GPS로 내 위치 잡기</button>
     <div class="grid2">
-      <div><label>GPS 안 되면: 멜버른 기준 몇 km 지점?</label><input id="manual-km" type="number" inputmode="decimal" placeholder="어제 지점+오늘 달린 km"></div>
+      <div><label>🪧 GPS 안 되면: 표지판의 도시</label><select id="sign-poi"><option value="" disabled selected>도시 선택…</option></select></div>
+      <div><label>표지판의 남은 km</label><input id="sign-km" type="number" inputmode="decimal" placeholder="예: 300"></div>
+    </div>
+    <div class="grid2">
+      <div><label>고급: 멜버른 기준 km 직접</label><input id="manual-km" type="number" inputmode="decimal" placeholder="어제 지점+오늘 km"></div>
       <div><label>평균 속도 km/h</label><input id="speed" type="number" inputmode="decimal" value="18"></div>
     </div>
     <p class="sub" id="pos-status" style="margin-top:8px; padding:0">위치를 잡으면 아래 판단이 계산됩니다.</p>
